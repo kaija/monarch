@@ -1,0 +1,15 @@
+- name: max_connections
+  value: 500
+  apply_method: pending-reboot
+- name: rds.log_retention_period
+  value: 10080
+  apply_method: immediate
+- name: autovacuum_freeze_max_age
+  value: 200000000
+  apply_method: pending-reboot
+- name: autovacuum_vacuum_scale_factor
+  value: 0.08
+  apply_method: immediate
+- name: autovacuum_vacuum_cost_limit
+  value: 400
+  apply_method: immediate
