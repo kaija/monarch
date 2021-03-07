@@ -105,7 +105,7 @@ resource "aws_lb_listener" "https" {
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-FS-1-2-2019-08"
-  certificate_arn   = "arn:aws:acm:us-west-2:890186914595:certificate/bd5a1758-f87c-4801-a02c-eb51d5c7ea13"
+  certificate_arn   = "arn:aws:acm:us-west-2:890186914595:certificate/299357f1-93bb-4450-9326-500dd00a1413"
 
   default_action {
     type             = "forward"
@@ -158,7 +158,13 @@ resource "aws_security_group" "api" {
     from_port       = 8000
     to_port         = 8000
     security_groups = [aws_security_group.alb.id]
-    cidr_blocks     = ["0.0.0.0/0"]
+  }
+  ingress {
+    description     = "Allow internal access admin"
+    protocol        = "tcp"
+    from_port       = 8001
+    to_port         = 8001
+    cidr_blocks     = ["10.0.0.0/8"]
   }
   egress {
     from_port   = 0
@@ -202,8 +208,8 @@ resource "aws_ecs_task_definition" "api" {
   execution_role_arn       = aws_iam_role.task_execute_role.arn
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = 256
-  memory                   = 512
+  cpu                      = 1024
+  memory                   = 2048
   tags                     = {}
   container_definitions    = <<TASK_DEFINITION
   [
@@ -218,8 +224,8 @@ resource "aws_ecs_task_definition" "api" {
       "startTimeout": 30,
       "stopTimeout": 10,
       "image": "kong",
-      "cpu": 256,
-      "memory": 512,
+      "cpu": 1024,
+      "memory": 2048,
       "memoryReservation": 128,
       "environment": [
         {
@@ -261,6 +267,13 @@ resource "aws_ecs_task_definition" "api" {
       ],
       "mountPoints": [],
       "volumesFrom": [],
+      "ulimits": [
+        {
+          "softLimit": 4096,
+          "hardLimit": 8192,
+          "name": "nofile"
+        }
+      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -282,7 +295,7 @@ resource "aws_lb_target_group" "api" {
   vpc_id      = data.aws_vpc.monarch.id
   health_check {
     path = "/"
-    matcher = "200,202,404"
+    matcher = "200,202,401,404"
   }
   depends_on = [aws_lb.api]
 }
